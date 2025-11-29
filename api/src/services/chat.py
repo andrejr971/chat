@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 import uuid
 from typing import List
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlmodel import Session, select
 
-from src.infra.database.models import ChatModel, ChatUserLink, UsersModel
+from src.infra.database.models import ChatModel, ChatUserLink, ChatWithMembers, UsersModel
 from src.schemas.chat import PayloadChatSchema
 
 
@@ -19,13 +19,67 @@ class ChatService:
     session.refresh(chat)
     return chat
 
-  def list_all(self, session: Session) -> List[ChatModel]:
-    statement = select(ChatModel).order_by(desc(ChatModel.updated_at))
-    return list(session.exec(statement).all())
+  def get_chat_members_count(self, session: Session, chat_id: str) -> int:
+    statement = select(func.count()).select_from(ChatUserLink).where(ChatUserLink.chat_id == uuid.UUID(chat_id))
+    result = session.exec(statement).one()
+    return result or 0
 
-  def show(self, session: Session, chat_id: str) -> ChatModel | None:
-    statement = select(ChatModel).where(ChatModel.id == uuid.UUID(chat_id))
-    return session.exec(statement).first()
+  def list_all(self, session: Session) -> List[ChatWithMembers]:
+    statement = (
+      select(
+        ChatModel,
+        func.count(ChatUserLink.user_id).label("total_members"),
+      )
+      .join(
+        ChatUserLink,
+        ChatUserLink.chat_id == ChatModel.id,
+        isouter=True,
+      )
+      .group_by(ChatModel.id)
+      .order_by(desc(ChatModel.updated_at))
+    )
+
+    rows = session.exec(statement).all()
+
+    return [
+      ChatWithMembers(
+        id=chat.id,
+        name=chat.name,
+        created_at=chat.created_at,
+        updated_at=chat.updated_at,
+        total_members=int(total_members or 0),
+      ) for chat, total_members in rows
+    ]
+
+  def show(self, session: Session, chat_id: str) -> ChatWithMembers | None:
+    chat_uuid = uuid.UUID(chat_id)
+    
+    statement = (
+      select(
+        ChatModel,
+        func.count(ChatUserLink.user_id).label("members_count"),
+      )
+      .join(
+        ChatUserLink,
+        ChatUserLink.chat_id == ChatModel.id,
+        isouter=True,
+      )
+      .where(ChatModel.id == chat_uuid)
+      .group_by(ChatModel.id)
+    )
+    result = session.exec(statement).first()
+
+    if not result:
+      return None
+
+    chat, total_members = result
+    return ChatWithMembers(
+      id=chat.id,
+      name=chat.name,
+      created_at=chat.created_at,
+      updated_at=chat.updated_at,
+      total_members=int(total_members or 0),
+    )
 
   def update(
     self,
@@ -33,7 +87,8 @@ class ChatService:
     chat_id: str,
     data: PayloadChatSchema
   ) -> ChatModel | None:
-    chat = self.show(session=session, chat_id=chat_id)
+    statement = select(ChatModel).where(ChatModel.id == uuid.UUID(chat_id))
+    chat = session.exec(statement).first()
     if chat is None:
       return None
 
@@ -119,5 +174,17 @@ class ChatService:
     session.commit()
     session.refresh(chat)
     return True
+
+  def list_all_members_by_chat(self, session: Session, chat_id: str) -> List[UsersModel]:
+    statement = (
+      select(UsersModel)
+      .join(
+        ChatUserLink,
+        ChatUserLink.user_id == UsersModel.id
+      )
+      .where(ChatUserLink.chat_id == uuid.UUID(chat_id))
+    )
+    users = session.exec(statement).all()
+    return users
 
 chat_service = ChatService()

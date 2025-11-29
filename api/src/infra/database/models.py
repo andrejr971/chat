@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List
+from sqlalchemy import table
 from sqlmodel import SQLModel, Field, Relationship
 
 class ChatUserLink(SQLModel, table=True):
@@ -60,3 +61,10 @@ class UsersModel(SQLModel, table=True):
     back_populates="users",
     link_model=ChatUserLink
   )
+
+class ChatWithMembers(SQLModel, table=False):
+  id: uuid.UUID
+  name: str
+  created_at: datetime
+  updated_at: datetime
+  total_members: int

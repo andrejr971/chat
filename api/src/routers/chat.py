@@ -1,5 +1,6 @@
 import logging
 from typing import List
+from schemas.users import UserSchema
 from starlette.status import (
   HTTP_200_OK,
   HTTP_201_CREATED,
@@ -30,7 +31,8 @@ async def create_chat(
     session=session,
     data=data
   )
-  
+  if (data.user_id):
+    chat_service.add_user(session=session, chat_id=str(chat.id), user_id=data.user_id)
   return ChatSchema.model_validate_json(chat.model_dump_json())
 
 @router.get(
@@ -38,7 +40,9 @@ async def create_chat(
   status_code=HTTP_200_OK,
   response_model=List[ChatSchema]
 )
-async def get_all_chats(session: Session = Depends(get_session)):
+async def get_all_chats(
+  session: Session = Depends(get_session)
+):
   chats = chat_service.list_all(session=session)
   return [
     ChatSchema.model_validate_json(chat.model_dump_json()) for chat in chats
@@ -59,6 +63,7 @@ async def get_chat(
       status_code=HTTP_404_NOT_FOUND,
       detail="Chat não encontrado"
     )
+
   return ChatSchema.model_validate_json(chat.model_dump_json())
 
 @router.put(
@@ -104,3 +109,28 @@ async def delete_chat(
     session=session,
     chat_id=chat_id
   )
+
+@router.get(
+  "/{chat_id}/members",
+  status_code=HTTP_200_OK,
+  response_model=List[UserSchema]
+)
+async def get_members_by_chat(
+  chat_id: str,
+  session: Session = Depends(get_session)
+):
+  chat = chat_service.show(session=session, chat_id=chat_id)
+  if chat is None:
+    raise HTTPException(
+      status_code=HTTP_404_NOT_FOUND,
+      detail="Chat não encontrado"
+    )
+
+  members = chat_service.list_all_members_by_chat(
+    session=session,
+    chat_id=chat_id
+  )
+
+  return [
+    UserSchema.model_validate_json(user.model_dump_json()) for user in members
+  ]

@@ -33,10 +33,7 @@ async def create_user(
     username=data.username
   )
   if username_in_use:
-    raise HTTPException(
-      status_code=HTTP_409_CONFLICT,
-      detail="Username já existe"
-    )
+    return UserSchema.model_validate_json(username_in_use.model_dump_json())
   user = users_service.create(
     session=session,
     data=data
