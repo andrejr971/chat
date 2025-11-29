@@ -1,0 +1,8 @@
+env
+.env
+venv
+.venv
+api-2
+.mypy_cache
+.pdm-build
+__pycache__
