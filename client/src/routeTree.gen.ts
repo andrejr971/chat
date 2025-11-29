@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './pages/index'
 import { Route as ChatsSearchRouteImport } from './pages/chats/search'
 import { Route as ChatsMainLayoutRouteImport } from './pages/chats/_main/layout'
 import { Route as ChatsMainIndexRouteImport } from './pages/chats/_main/index'
+import { Route as ChatsMainChatIdLayoutRouteImport } from './pages/chats/_main/$chatId/layout'
 import { Route as ChatsMainChatIdIndexRouteImport } from './pages/chats/_main/$chatId/index'
 
 const ChatsRouteImport = createFileRoute('/chats')()
@@ -43,18 +44,24 @@ const ChatsMainIndexRoute = ChatsMainIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ChatsMainLayoutRoute,
 } as any)
-const ChatsMainChatIdIndexRoute = ChatsMainChatIdIndexRouteImport.update({
-  id: '/$chatId/',
-  path: '/$chatId/',
+const ChatsMainChatIdLayoutRoute = ChatsMainChatIdLayoutRouteImport.update({
+  id: '/$chatId',
+  path: '/$chatId',
   getParentRoute: () => ChatsMainLayoutRoute,
+} as any)
+const ChatsMainChatIdIndexRoute = ChatsMainChatIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ChatsMainChatIdLayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chats': typeof ChatsMainLayoutRouteWithChildren
   '/chats/search': typeof ChatsSearchRoute
+  '/chats/$chatId': typeof ChatsMainChatIdLayoutRouteWithChildren
   '/chats/': typeof ChatsMainIndexRoute
-  '/chats/$chatId': typeof ChatsMainChatIdIndexRoute
+  '/chats/$chatId/': typeof ChatsMainChatIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,12 +75,19 @@ export interface FileRoutesById {
   '/chats': typeof ChatsRouteWithChildren
   '/chats/_main': typeof ChatsMainLayoutRouteWithChildren
   '/chats/search': typeof ChatsSearchRoute
+  '/chats/_main/$chatId': typeof ChatsMainChatIdLayoutRouteWithChildren
   '/chats/_main/': typeof ChatsMainIndexRoute
   '/chats/_main/$chatId/': typeof ChatsMainChatIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chats' | '/chats/search' | '/chats/' | '/chats/$chatId'
+  fullPaths:
+    | '/'
+    | '/chats'
+    | '/chats/search'
+    | '/chats/$chatId'
+    | '/chats/'
+    | '/chats/$chatId/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/chats' | '/chats/search' | '/chats/$chatId'
   id:
@@ -82,6 +96,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/chats/_main'
     | '/chats/search'
+    | '/chats/_main/$chatId'
     | '/chats/_main/'
     | '/chats/_main/$chatId/'
   fileRoutesById: FileRoutesById
@@ -128,24 +143,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatsMainIndexRouteImport
       parentRoute: typeof ChatsMainLayoutRoute
     }
-    '/chats/_main/$chatId/': {
-      id: '/chats/_main/$chatId/'
+    '/chats/_main/$chatId': {
+      id: '/chats/_main/$chatId'
       path: '/$chatId'
       fullPath: '/chats/$chatId'
-      preLoaderRoute: typeof ChatsMainChatIdIndexRouteImport
+      preLoaderRoute: typeof ChatsMainChatIdLayoutRouteImport
       parentRoute: typeof ChatsMainLayoutRoute
+    }
+    '/chats/_main/$chatId/': {
+      id: '/chats/_main/$chatId/'
+      path: '/'
+      fullPath: '/chats/$chatId/'
+      preLoaderRoute: typeof ChatsMainChatIdIndexRouteImport
+      parentRoute: typeof ChatsMainChatIdLayoutRoute
     }
   }
 }
 
-interface ChatsMainLayoutRouteChildren {
-  ChatsMainIndexRoute: typeof ChatsMainIndexRoute
+interface ChatsMainChatIdLayoutRouteChildren {
   ChatsMainChatIdIndexRoute: typeof ChatsMainChatIdIndexRoute
 }
 
-const ChatsMainLayoutRouteChildren: ChatsMainLayoutRouteChildren = {
-  ChatsMainIndexRoute: ChatsMainIndexRoute,
+const ChatsMainChatIdLayoutRouteChildren: ChatsMainChatIdLayoutRouteChildren = {
   ChatsMainChatIdIndexRoute: ChatsMainChatIdIndexRoute,
+}
+
+const ChatsMainChatIdLayoutRouteWithChildren =
+  ChatsMainChatIdLayoutRoute._addFileChildren(
+    ChatsMainChatIdLayoutRouteChildren,
+  )
+
+interface ChatsMainLayoutRouteChildren {
+  ChatsMainChatIdLayoutRoute: typeof ChatsMainChatIdLayoutRouteWithChildren
+  ChatsMainIndexRoute: typeof ChatsMainIndexRoute
+}
+
+const ChatsMainLayoutRouteChildren: ChatsMainLayoutRouteChildren = {
+  ChatsMainChatIdLayoutRoute: ChatsMainChatIdLayoutRouteWithChildren,
+  ChatsMainIndexRoute: ChatsMainIndexRoute,
 }
 
 const ChatsMainLayoutRouteWithChildren = ChatsMainLayoutRoute._addFileChildren(
