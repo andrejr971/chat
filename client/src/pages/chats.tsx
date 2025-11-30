@@ -24,7 +24,7 @@ export const Route = createFileRoute('/chats')({
 
 function RouteComponent() {
   const dispatch = useAppDispatch()
-  const { connected, messages } = useAppSelector((state) => state.chat)
+  const { connected, messages, error } = useAppSelector((state) => state.chat)
   const { currentUser } = useAppSelector((state) => state.user)
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
@@ -74,6 +74,12 @@ function RouteComponent() {
           className="flex-1 flex flex-col gap-4 w-full overflow-y-auto"
           ref={messagesContainerRef}
         >
+          {error ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
           {messages.length === 0 ? (
             <ChatEmtpy />
           ) : (

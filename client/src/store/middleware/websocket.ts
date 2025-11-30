@@ -5,9 +5,23 @@ import { chatActions } from '../chat'
 const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3333/ws'
 
 let socket: WebSocket | null = null
+const pendingSeen = new Set<string>()
+let visibilityListenerAttached = false
 
 export const websocketMiddleware: Middleware =
   (store) => (next) => (action) => {
+    if (!visibilityListenerAttached && typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && pendingSeen.size > 0) {
+          for (const id of Array.from(pendingSeen)) {
+            store.dispatch(chatActions.markSeen({ id }))
+            pendingSeen.delete(id)
+          }
+        }
+      })
+      visibilityListenerAttached = true
+    }
+
     if (chatActions.connect.match(action)) {
       const { username } = action.payload
 
@@ -23,6 +37,16 @@ export const websocketMiddleware: Middleware =
       socket.onopen = () => {
         store.dispatch(chatActions.setConnected(true))
         store.dispatch(chatActions.setError(''))
+
+        const canMarkSeen =
+          typeof document !== 'undefined' &&
+          document.visibilityState === 'visible'
+        if (canMarkSeen && pendingSeen.size > 0) {
+          for (const id of Array.from(pendingSeen)) {
+            store.dispatch(chatActions.markSeen({ id }))
+            pendingSeen.delete(id)
+          }
+        }
       }
 
       socket.onclose = () => {
@@ -61,9 +85,17 @@ export const websocketMiddleware: Middleware =
 
           const state = store.getState()
           if (data.message.from !== state.chat.username) {
-            socket?.send(
-              JSON.stringify({ type: 'seen', messageId: data.message.id }),
-            )
+            const canMarkSeen =
+              typeof document !== 'undefined' &&
+              document.visibilityState === 'visible'
+
+            if (canMarkSeen) {
+              socket?.send(
+                JSON.stringify({ type: 'seen', messageId: data.message.id }),
+              )
+            } else {
+              pendingSeen.add(data.message.id)
+            }
           }
         }
 
@@ -84,6 +116,7 @@ export const websocketMiddleware: Middleware =
     if (chatActions.disconnect.match(action)) {
       socket?.close()
       socket = null
+      pendingSeen.clear()
     }
 
     if (chatActions.sendMessage.match(action)) {
