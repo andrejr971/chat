@@ -14,14 +14,14 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { useAppDispatch, useAppSelector } from '@/hooks/store'
-import { actionCreateUser } from '@/store/slices/users'
+import { useAppDispatch } from '@/hooks/store'
+import { usersActions } from '@/store/users'
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
   beforeLoad: ({ context: { store } }) => {
     const state = store.getState()
-    const isUser = state.users.user
+    const isUser = state.user.currentUser
 
     if (isUser) {
       throw redirect({
@@ -44,13 +44,12 @@ function RouteComponent() {
     },
   })
 
-  const { loading, error } = useAppSelector((state) => state.users)
   const router = useRouter()
 
   const dispatch = useAppDispatch()
 
   const handleSubmit = async (payload: SchemaValidation) => {
-    await dispatch(actionCreateUser(payload))
+    dispatch(usersActions.setUser(payload))
     router.navigate({
       to: '/chats',
     })
@@ -88,15 +87,9 @@ function RouteComponent() {
                 </FormItem>
               )}
             />
-
-            {error && (
-              <span className="text-destructive text-sm flex justify-center">
-                {error}
-              </span>
-            )}
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" className="w-full">
             Começar
           </Button>
         </form>

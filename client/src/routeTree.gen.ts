@@ -8,17 +8,9 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
-
 import { Route as rootRouteImport } from './pages/__root'
+import { Route as ChatsRouteImport } from './pages/chats'
 import { Route as IndexRouteImport } from './pages/index'
-import { Route as ChatsSearchRouteImport } from './pages/chats/search'
-import { Route as ChatsMainLayoutRouteImport } from './pages/chats/_main/layout'
-import { Route as ChatsMainIndexRouteImport } from './pages/chats/_main/index'
-import { Route as ChatsMainChatIdLayoutRouteImport } from './pages/chats/_main/$chatId/layout'
-import { Route as ChatsMainChatIdIndexRouteImport } from './pages/chats/_main/$chatId/index'
-
-const ChatsRouteImport = createFileRoute('/chats')()
 
 const ChatsRoute = ChatsRouteImport.update({
   id: '/chats',
@@ -30,80 +22,31 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatsSearchRoute = ChatsSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => ChatsRoute,
-} as any)
-const ChatsMainLayoutRoute = ChatsMainLayoutRouteImport.update({
-  id: '/_main',
-  getParentRoute: () => ChatsRoute,
-} as any)
-const ChatsMainIndexRoute = ChatsMainIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ChatsMainLayoutRoute,
-} as any)
-const ChatsMainChatIdLayoutRoute = ChatsMainChatIdLayoutRouteImport.update({
-  id: '/$chatId',
-  path: '/$chatId',
-  getParentRoute: () => ChatsMainLayoutRoute,
-} as any)
-const ChatsMainChatIdIndexRoute = ChatsMainChatIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ChatsMainChatIdLayoutRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chats': typeof ChatsMainLayoutRouteWithChildren
-  '/chats/search': typeof ChatsSearchRoute
-  '/chats/$chatId': typeof ChatsMainChatIdLayoutRouteWithChildren
-  '/chats/': typeof ChatsMainIndexRoute
-  '/chats/$chatId/': typeof ChatsMainChatIdIndexRoute
+  '/chats': typeof ChatsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chats': typeof ChatsMainIndexRoute
-  '/chats/search': typeof ChatsSearchRoute
-  '/chats/$chatId': typeof ChatsMainChatIdIndexRoute
+  '/chats': typeof ChatsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/chats': typeof ChatsRouteWithChildren
-  '/chats/_main': typeof ChatsMainLayoutRouteWithChildren
-  '/chats/search': typeof ChatsSearchRoute
-  '/chats/_main/$chatId': typeof ChatsMainChatIdLayoutRouteWithChildren
-  '/chats/_main/': typeof ChatsMainIndexRoute
-  '/chats/_main/$chatId/': typeof ChatsMainChatIdIndexRoute
+  '/chats': typeof ChatsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/chats'
-    | '/chats/search'
-    | '/chats/$chatId'
-    | '/chats/'
-    | '/chats/$chatId/'
+  fullPaths: '/' | '/chats'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chats' | '/chats/search' | '/chats/$chatId'
-  id:
-    | '__root__'
-    | '/'
-    | '/chats'
-    | '/chats/_main'
-    | '/chats/search'
-    | '/chats/_main/$chatId'
-    | '/chats/_main/'
-    | '/chats/_main/$chatId/'
+  to: '/' | '/chats'
+  id: '__root__' | '/' | '/chats'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ChatsRoute: typeof ChatsRouteWithChildren
+  ChatsRoute: typeof ChatsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,86 +65,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chats/search': {
-      id: '/chats/search'
-      path: '/search'
-      fullPath: '/chats/search'
-      preLoaderRoute: typeof ChatsSearchRouteImport
-      parentRoute: typeof ChatsRoute
-    }
-    '/chats/_main': {
-      id: '/chats/_main'
-      path: '/chats'
-      fullPath: '/chats'
-      preLoaderRoute: typeof ChatsMainLayoutRouteImport
-      parentRoute: typeof ChatsRoute
-    }
-    '/chats/_main/': {
-      id: '/chats/_main/'
-      path: '/'
-      fullPath: '/chats/'
-      preLoaderRoute: typeof ChatsMainIndexRouteImport
-      parentRoute: typeof ChatsMainLayoutRoute
-    }
-    '/chats/_main/$chatId': {
-      id: '/chats/_main/$chatId'
-      path: '/$chatId'
-      fullPath: '/chats/$chatId'
-      preLoaderRoute: typeof ChatsMainChatIdLayoutRouteImport
-      parentRoute: typeof ChatsMainLayoutRoute
-    }
-    '/chats/_main/$chatId/': {
-      id: '/chats/_main/$chatId/'
-      path: '/'
-      fullPath: '/chats/$chatId/'
-      preLoaderRoute: typeof ChatsMainChatIdIndexRouteImport
-      parentRoute: typeof ChatsMainChatIdLayoutRoute
-    }
   }
 }
 
-interface ChatsMainChatIdLayoutRouteChildren {
-  ChatsMainChatIdIndexRoute: typeof ChatsMainChatIdIndexRoute
-}
-
-const ChatsMainChatIdLayoutRouteChildren: ChatsMainChatIdLayoutRouteChildren = {
-  ChatsMainChatIdIndexRoute: ChatsMainChatIdIndexRoute,
-}
-
-const ChatsMainChatIdLayoutRouteWithChildren =
-  ChatsMainChatIdLayoutRoute._addFileChildren(
-    ChatsMainChatIdLayoutRouteChildren,
-  )
-
-interface ChatsMainLayoutRouteChildren {
-  ChatsMainChatIdLayoutRoute: typeof ChatsMainChatIdLayoutRouteWithChildren
-  ChatsMainIndexRoute: typeof ChatsMainIndexRoute
-}
-
-const ChatsMainLayoutRouteChildren: ChatsMainLayoutRouteChildren = {
-  ChatsMainChatIdLayoutRoute: ChatsMainChatIdLayoutRouteWithChildren,
-  ChatsMainIndexRoute: ChatsMainIndexRoute,
-}
-
-const ChatsMainLayoutRouteWithChildren = ChatsMainLayoutRoute._addFileChildren(
-  ChatsMainLayoutRouteChildren,
-)
-
-interface ChatsRouteChildren {
-  ChatsMainLayoutRoute: typeof ChatsMainLayoutRouteWithChildren
-  ChatsSearchRoute: typeof ChatsSearchRoute
-}
-
-const ChatsRouteChildren: ChatsRouteChildren = {
-  ChatsMainLayoutRoute: ChatsMainLayoutRouteWithChildren,
-  ChatsSearchRoute: ChatsSearchRoute,
-}
-
-const ChatsRouteWithChildren = ChatsRoute._addFileChildren(ChatsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ChatsRoute: ChatsRouteWithChildren,
+  ChatsRoute: ChatsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
