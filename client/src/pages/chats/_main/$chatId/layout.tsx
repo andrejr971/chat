@@ -45,7 +45,9 @@ function RouteComponent() {
     <ResizablePanelGroup direction="horizontal" className="w-full h-full">
       <ResizablePanel className="h-full flex flex-col items-center">
         <header className="w-full p-4 border-b flex items-baseline justify-between text-2xl">
-          <TitleChat chat={data} />
+          <div>
+            <TitleChat chat={data} />
+          </div>
           <Button variant={'outline'} size={'icon'} onClick={handleOpenDetail}>
             {openDetail ? (
               <X className="size-4" />

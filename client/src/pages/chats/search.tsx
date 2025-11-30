@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ChevronLeft } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { listAllChats } from '@/http/chats/list'
 
 import { ChatEmtpy } from './-components/chat-empty'
+import { ChatItem } from './-components/chat-item'
 
 export const Route = createFileRoute('/chats/search')({
   component: RouteComponent,
@@ -37,28 +37,7 @@ function RouteComponent() {
         {data ? (
           <ul className="list-none grid grid-cols-3 gap-4">
             {data.map((chat) => (
-              <li
-                key={chat.id}
-                className="flex flex-col gap-4 bg-card rounded-md border"
-              >
-                <div className="flex flex-col gap-2 p-4 pb-0">
-                  <strong className="text-lg font-semibold ">
-                    {chat.name}
-                  </strong>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Total de membros
-                    </span>
-                    <Badge variant="outline">{chat.totalMembers}</Badge>
-                  </div>
-                </div>
-                <div className="w-full p-4 border-t">
-                  <Button variant="outline" className="w-full">
-                    Entrar no chat
-                  </Button>
-                </div>
-              </li>
+              <ChatItem key={chat.id} chat={chat} />
             ))}
           </ul>
         ) : (

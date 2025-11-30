@@ -19,10 +19,10 @@ export const Route = createFileRoute('/chats/_main')({
 function RouteComponent() {
   return (
     <div className="w-screen h-screen bg-muted">
-      <div className="grid grid-cols-[460px_1fr] h-full">
+      <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[460px_1fr] h-full">
         <Sidebar />
 
-        <div className="w-full h-full flex flex-col items-center">
+        <div className="w-full h-full flex flex-col items-center overflow-hidden">
           <Outlet />
         </div>
       </div>
