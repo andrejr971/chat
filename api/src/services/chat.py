@@ -81,14 +81,17 @@ class ChatService:
       total_members=int(total_members or 0),
     )
 
+  def __get_chat(self, session: Session, chat_id: str) -> ChatModel:
+    statement = select(ChatModel).where(ChatModel.id == uuid.UUID(chat_id))
+    return session.exec(statement).first()
+
   def update(
     self,
     session: Session,
     chat_id: str,
     data: PayloadChatSchema
   ) -> ChatModel | None:
-    statement = select(ChatModel).where(ChatModel.id == uuid.UUID(chat_id))
-    chat = session.exec(statement).first()
+    chat = self.__get_chat(session, chat_id)
     if chat is None:
       return None
 
@@ -104,7 +107,7 @@ class ChatService:
     session: Session,
     chat_id: str
   ):
-    chat = self.show(session=session, chat_id=chat_id)
+    chat = self.__get_chat(session, chat_id)
     if chat:
       chat.updated_at = datetime.now(timezone.utc)
       session.add(chat)
@@ -112,7 +115,7 @@ class ChatService:
       session.refresh(chat)
 
   def delete(self, session: Session, chat_id: str) -> None:
-    chat = self.show(session=session, chat_id=chat_id)
+    chat = self.__get_chat(session, chat_id)
     if chat:
       session.delete(chat)
       session.commit()
@@ -123,9 +126,9 @@ class ChatService:
     chat_id: str,
     user_id: str
   ) -> bool:
-    chat = self.show(session=session, chat_id=chat_id)
+    chat = self.__get_chat(session, chat_id)
     if chat is None:
-      return False
+      return None
 
     user = session.exec(
       select(UsersModel).where(UsersModel.id == uuid.UUID(user_id))
@@ -155,7 +158,7 @@ class ChatService:
     chat_id: str,
     user_id: str
   ) -> bool:
-    chat = self.show(session=session, chat_id=chat_id)
+    chat = self.__get_chat(session, chat_id)
     if chat is None:
       return False
 
