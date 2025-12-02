@@ -22,23 +22,27 @@ class ConnectionManager:
   def disconnect(self, username: str, websocket: Optional[WebSocket] = None) -> None:
     if websocket:
       self.active_connections[username].discard(websocket)
+
       if not self.active_connections[username]:
         self.active_connections.pop(username, None)
+
     else:
       self.active_connections.pop(username, None)
     logger.info("Usuario desconectado: %s", username)
 
   async def broadcast_message(self, payload: dict, skip_username: Optional[str] = None, skip_ws: Optional[WebSocket] = None) -> None:
     dead: Set[tuple[str, WebSocket]] = set()
+
     for user, connections in self.active_connections.items():
       if user == skip_username:
         continue
+
       for connection in list(connections):
         if skip_ws and connection is skip_ws:
           continue
         try:
           await connection.send_json(payload)
-        except Exception as exc:  # pragma: no cover - defensive cleanup
+        except Exception as exc: 
           logger.warning("Erro ao enviar mensagem para %s: %s", user, exc)
           dead.add((user, connection))
     for user, connection in dead:
@@ -46,13 +50,16 @@ class ConnectionManager:
 
   async def send_ack(self, username: str, message_id: str, status: str, by: Optional[str] = None) -> None:
     connections = self.active_connections.get(username) or set()
+
     for connection in list(connections):
       ack_payload = {"type": "ack", "messageId": message_id, "status": status}
+      
       if by:
         ack_payload["by"] = by
+
       try:
         await connection.send_json(ack_payload)
-      except Exception as exc:  # pragma: no cover
+      except Exception as exc:
         logger.warning("Erro ao enviar ack para %s: %s", username, exc)
         self.disconnect(username, connection)
 

@@ -18,13 +18,8 @@ async def health():
   return {"status": "ok"}
 
 
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-  username = websocket.query_params.get("username")
-  if not username:
-    await websocket.close(code=1008, reason="username requerido")
-    return
-
+@router.websocket("/ws/{username}")
+async def websocket_endpoint(websocket: WebSocket, username: str):
   await manager.connect(websocket, username)
 
   join_payload = {
@@ -96,6 +91,6 @@ async def websocket_endpoint(websocket: WebSocket):
       },
     }
     await manager.broadcast_message(leave_payload, skip_ws=websocket)
-  except Exception as exc:  # pragma: no cover - log unexpected exceptions
+  except Exception as exc:
     logger.error("Erro inesperado no websocket: %s", exc)
     manager.disconnect(username, websocket)

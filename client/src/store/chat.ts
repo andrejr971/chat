@@ -46,7 +46,7 @@ export const chatSlice = createSlice({
       state.error = action.payload
     },
     upsertMessage: (state, action: PayloadAction<ChatMessage>) => {
-      const idx = state.messages.findIndex((m) => m.id === action.payload.id)
+      const idx = state.messages.findIndex((message) => message.id === action.payload.id)
       if (idx >= 0) {
         state.messages[idx] = { ...state.messages[idx], ...action.payload }
       } else {
@@ -57,7 +57,7 @@ export const chatSlice = createSlice({
       state,
       action: PayloadAction<{ id: string; status: MessageStatus }>,
     ) => {
-      const target = state.messages.find((m) => m.id === action.payload.id)
+      const target = state.messages.find((message) => message.id === action.payload.id)
       if (target) {
         target.status = action.payload.status
       }
