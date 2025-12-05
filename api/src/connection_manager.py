@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import DefaultDict, Dict, Optional, Set
+from typing import DefaultDict, Dict, List, Optional, Set
 
 from fastapi import WebSocket
 
@@ -13,22 +13,34 @@ class ConnectionManager:
     self.active_connections: Dict[str, Set[WebSocket]] = defaultdict(set)
     self.message_owner: Dict[str, str] = {}
     self.seen_by: DefaultDict[str, Set[str]] = defaultdict(set)
+    self.history: List[dict] = []
 
-  async def connect(self, websocket: WebSocket, username: str) -> None:
+  async def connect(self, websocket: WebSocket, username: str) -> bool:
+    """Conecta o usuario e retorna True se for a primeira conexao ativa dele."""
     await websocket.accept()
+    is_first_connection = not self.active_connections[username]
     self.active_connections[username].add(websocket)
     logger.info("Usuario conectado: %s", username)
+    return is_first_connection
 
-  def disconnect(self, username: str, websocket: Optional[WebSocket] = None) -> None:
+  def disconnect(self, username: str, websocket: Optional[WebSocket] = None) -> bool:
+    """Desconecta e retorna True se era a ultima conexao ativa do usuario."""
+    last_connection = False
+
     if websocket:
       self.active_connections[username].discard(websocket)
 
       if not self.active_connections[username]:
         self.active_connections.pop(username, None)
+        last_connection = True
 
     else:
-      self.active_connections.pop(username, None)
+      if username in self.active_connections:
+        self.active_connections.pop(username, None)
+        last_connection = True
+
     logger.info("Usuario desconectado: %s", username)
+    return last_connection
 
   async def broadcast_message(self, payload: dict, skip_username: Optional[str] = None, skip_ws: Optional[WebSocket] = None) -> None:
     dead: Set[tuple[str, WebSocket]] = set()
@@ -62,6 +74,22 @@ class ConnectionManager:
       except Exception as exc:
         logger.warning("Erro ao enviar ack para %s: %s", username, exc)
         self.disconnect(username, connection)
+
+  def add_to_history(self, message: dict) -> None:
+    self.history.append(message)
+
+  def get_history(self) -> List[dict]:
+    return list(self.history)
+
+  async def replay_seen_acks(self, username: str) -> None:
+    """Reenvia acks de mensagens ja vistas enquanto o dono estava offline."""
+    for message_id, owner in self.message_owner.items():
+      if owner != username:
+        continue
+
+      seen_users = self.seen_by.get(message_id, set())
+      for seen_user in seen_users:
+        await self.send_ack(username, message_id, "seen", by=seen_user)
 
 
 manager = ConnectionManager()

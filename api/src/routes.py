@@ -20,18 +20,26 @@ async def health():
 
 @router.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
-  await manager.connect(websocket, username)
+  first_connection = await manager.connect(websocket, username)
 
-  join_payload = {
-    "type": "system",
-    "message": {
-      "id": str(uuid4()),
-      "from": "system",
-      "content": f"{username} entrou no chat",
-      "timestamp": datetime.now(timezone.utc).isoformat(),
-    },
-  }
-  await manager.broadcast_message(join_payload, skip_ws=websocket)
+  # Reenvia acks de mensagens que ja foram vistas enquanto o dono estava offline
+  await manager.replay_seen_acks(username)
+
+  if first_connection:
+    join_payload = {
+      "type": "system",
+      "message": {
+        "id": str(uuid4()),
+        "from": "system",
+        "content": f"{username} entrou no chat",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+      },
+    }
+    await manager.broadcast_message(join_payload, skip_ws=websocket)
+
+  # Envia historico para o usuario recem conectado
+  history_payload = {"type": "history", "messages": manager.get_history()}
+  await websocket.send_json(history_payload)
 
   try:
     while True:
@@ -55,6 +63,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         }
 
         manager.message_owner[message_id] = username
+        manager.add_to_history(message_payload)
 
         await manager.send_ack(username, message_id, "received")
 
@@ -80,17 +89,18 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         await websocket.send_json({"type": "error", "message": "Evento desconhecido"})
 
   except WebSocketDisconnect:
-    manager.disconnect(username, websocket)
-    leave_payload = {
-      "type": "system",
-      "message": {
-        "id": str(uuid4()),
-        "from": "system",
-        "content": f"{username} saiu do chat",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-      },
-    }
-    await manager.broadcast_message(leave_payload, skip_ws=websocket)
+    last_connection = manager.disconnect(username, websocket)
+    if last_connection:
+      leave_payload = {
+        "type": "system",
+        "message": {
+          "id": str(uuid4()),
+          "from": "system",
+          "content": f"{username} saiu do chat",
+          "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+      }
+      await manager.broadcast_message(leave_payload, skip_username=username, skip_ws=websocket)
   except Exception as exc:
     logger.error("Erro inesperado no websocket: %s", exc)
     manager.disconnect(username, websocket)
