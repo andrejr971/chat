@@ -43,6 +43,7 @@ class ConnectionManager:
     return last_connection
 
   async def broadcast_message(self, payload: dict, skip_username: Optional[str] = None, skip_ws: Optional[WebSocket] = None) -> None:
+    """Envia um payload para todas as conexoes, com opcoes para pular usuario ou websocket."""
     dead: Set[tuple[str, WebSocket]] = set()
 
     for user, connections in self.active_connections.items():
@@ -61,11 +62,12 @@ class ConnectionManager:
       self.disconnect(user, connection)
 
   async def send_ack(self, username: str, message_id: str, status: str, by: Optional[str] = None) -> None:
+    """Envia ack de status para todas as conexoes do usuario alvo."""
     connections = self.active_connections.get(username) or set()
 
     for connection in list(connections):
       ack_payload = {"type": "ack", "messageId": message_id, "status": status}
-      
+
       if by:
         ack_payload["by"] = by
 
@@ -76,9 +78,11 @@ class ConnectionManager:
         self.disconnect(username, connection)
 
   def add_to_history(self, message: dict) -> None:
+    """Armazena uma mensagem no historico em memoria."""
     self.history.append(message)
 
   def get_history(self) -> List[dict]:
+    """Retorna uma copia do historico em memoria."""
     return list(self.history)
 
   async def replay_seen_acks(self, username: str) -> None:

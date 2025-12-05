@@ -15,14 +15,15 @@ router = APIRouter()
 
 @router.get("/health")
 async def health():
+  """Endpoint simples de healthcheck."""
   return {"status": "ok"}
 
 
 @router.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
+  """Gerencia o ciclo completo do websocket de chat para um usuario."""
   first_connection = await manager.connect(websocket, username)
 
-  # Reenvia acks de mensagens que ja foram vistas enquanto o dono estava offline
   await manager.replay_seen_acks(username)
 
   if first_connection:
@@ -37,7 +38,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     }
     await manager.broadcast_message(join_payload, skip_ws=websocket)
 
-  # Envia historico para o usuario recem conectado
   history_payload = {"type": "history", "messages": manager.get_history()}
   await websocket.send_json(history_payload)
 
